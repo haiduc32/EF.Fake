@@ -48,9 +48,11 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="EntityKeysInfo.cs" />
     <Compile Include="FakeContext.cs" />
     <Compile Include="FakeDbSet.cs" />
     <Compile Include="IEntityStructureProvider.cs" />
+    <Compile Include="KeyPropertyInfo.cs" />
     <Compile Include="NavigationPropertyInfo.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
