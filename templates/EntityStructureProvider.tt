@@ -44,6 +44,10 @@ namespace <#=code.EscapeNamespace(codeNamespace)#>
 	public class EntityStructureProvider : IEntityStructureProvider
 	{
 		private List<NavigationPropertyInfo> _navigationProperties;
+		private List<EntityKeysInfo> _entityKeys;
+
+		public List<NavigationPropertyInfo> NavigationProperties { get { return _navigationProperties; } }
+		public List<EntityKeysInfo> EntityKeys { get { return _entityKeys; } }
 <#
 }
 
@@ -63,6 +67,7 @@ foreach (var entity in allEntities)
 			IsIdentity = isIdentity
 		});
 	}
+	entityInfoList.Add(ekInfo);
 
 	foreach (var navigationProperty in entity.NavigationProperties)
     {
@@ -78,27 +83,36 @@ foreach (var entity in allEntities)
 		string fullName = navigationProperty.RelationshipType.FullName;
 
 		NavigationProperty inspectedNavigation = null;
+		NavigationProperty relatedNavigation = null;
 		if (navigationProperty.GetDependentProperties().Any())
 		{
 			inspectedNavigation = navigationProperty;
+			relatedNavigation = navigationProperty.ToEndMember.GetEntityType().NavigationProperties
+				.SingleOrDefault(x => x.RelationshipType.FullName == fullName);
 		}
 		else
 		{
 			inspectedNavigation = navigationProperty.ToEndMember.GetEntityType().NavigationProperties
 				.Single(x => x.RelationshipType.FullName == fullName);
+			relatedNavigation = navigationProperty;
 		}
+		
 			
 		//this navigation property has the Foreign key defined in this entity
+		//GetEntityType gets the type of the end member in the association  - so we have to reverse here
 		fromEntity = inspectedNavigation.FromEndMember.GetEntityType().Name;
 		toEntity = inspectedNavigation.ToEndMember.GetEntityType().Name;
-		fromNavigationProperty = inspectedNavigation.FromEndMember.Name;
-		toNavigationProperty = inspectedNavigation.ToEndMember.Name;
+		if (relatedNavigation != null)
+		{
+			toNavigationProperty = relatedNavigation.Name;
+		}
+		fromNavigationProperty = inspectedNavigation.Name;//.ToEndMember.Name;
 
 		foreignKeyProperty = inspectedNavigation.GetDependentProperties().Select(x => x.Name).ToList();
 		primaryKeyProperty = inspectedNavigation.ToEndMember.GetEntityType().KeyMembers.Select(x => x.Name).ToList();
 
-		string fromMultiplicity = inspectedNavigation.FromEndMember.RelationshipMultiplicity.ToString();
-		string toMultiplicity = inspectedNavigation.ToEndMember.RelationshipMultiplicity.ToString();
+		string toMultiplicity = inspectedNavigation.FromEndMember.RelationshipMultiplicity.ToString();
+		string fromMultiplicity = inspectedNavigation.ToEndMember.RelationshipMultiplicity.ToString();
 
 		navigationInfoList.Add(new NavigationPropertyInfo
 		{
@@ -112,33 +126,14 @@ foreach (var entity in allEntities)
 			FromMultiplicity = fromMultiplicity,
 			ToMultiplicity = toMultiplicity
 		});
-
-		//get's the FK if it's defined in this end of the navigation
-		var depProp = navigationProperty.GetDependentProperties().FirstOrDefault();
-		string depStr = depProp != null ? depProp.Name : "";
-		string relName = navigationProperty.RelationshipType.FullName;
-
-		foreach (var keyMember in entity.KeyMembers)
-		{
-#>
-	//PrimaryK: <#=keyMember.Name#>
-<#
-		}
-
     }
 }
 
-//now that we  iterated through all entities we can write the 
-
-//might need to do something with complex properties too, but since we aren't using any at the moment we'll leave it empty
-//foreach (var complex in typeMapper.GetItemsToGenerate<ComplexType>(itemCollection))
-//{
-//	
-//}
 #>
 		public EntityStructureProvider()
 		{
 			_navigationProperties = new List<NavigationPropertyInfo>();
+			_entityKeys = new List<EntityKeysInfo>();
 <#
 foreach (var navigationInfo in navigationInfoList)
 {
@@ -154,7 +149,7 @@ foreach (var navigationInfo in navigationInfoList)
 	foreach (string navigationName in navigationInfo.ForeignKeyProperty)
 	{
 #>
-					typeof(<#= navigationInfo.FromType #>).GetProperty("<#= navigationName  #>")
+					typeof(<#= navigationInfo.FromType #>).GetProperty("<#= navigationName  #>"),
 <#
 	}
 #>
@@ -165,7 +160,7 @@ foreach (var navigationInfo in navigationInfoList)
 	foreach (string navigationName in navigationInfo.PrimaryKeyProperty)
 	{
 #>
-					typeof(<#= navigationInfo.ToType #>).GetProperty("<#= navigationName  #>")
+					typeof(<#= navigationInfo.ToType #>).GetProperty("<#= navigationName  #>"),
 <#
 	}
 #>
@@ -191,7 +186,30 @@ foreach (var navigationInfo in navigationInfoList)
 <#
 }
 
-
+foreach (var entityKey in entityInfoList)
+{
+#>
+			_entityKeys.Add(new EntityKeysInfo
+			{
+				Entity = typeof(<#= entityKey.Entity #>),
+				Keys = new List<KeyPropertyInfo>
+				{
+<#
+	foreach (var key in entityKey.Keys)
+	{
+#>
+					new KeyPropertyInfo
+					{
+						PK = typeof(<#= entityKey.Entity #>).GetProperty("<#= key.Name #>"),
+						IsIdentity = <#= key.IsIdentity.ToString().ToLower() #>
+					},
+<#
+	}
+#>
+				}
+			});
+<#
+}
 #>
 		}
 	}
