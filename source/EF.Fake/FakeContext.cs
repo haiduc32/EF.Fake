@@ -9,7 +9,13 @@ namespace EF.Fake
 	{
 		#region private fields
 
-		Dictionary<Type, FakeDbSetBase> _fakeDbSetDictionary;
+		private Dictionary<Type, FakeDbSetBase> _fakeDbSetDictionary;
+
+		/// <summary>
+		/// List of entities that were added and are waiting for the Save operation to be commited.
+		/// Only after that will be available in the DbSets.
+		/// </summary>
+		private List<object> _pendingSaveEntities;
 
 		#endregion private fields
 
@@ -29,6 +35,20 @@ namespace EF.Fake
 			return fakeDbSet;
 		}
 
+		internal FakeDbSetBase Get(Type type)
+		{
+			FakeDbSetBase fakeDbSetBase;
+			if (!_fakeDbSetDictionary.TryGetValue(type, out fakeDbSetBase))
+			{
+				fakeDbSetBase = (FakeDbSetBase)typeof(FakeContext)
+					.GetMethods().Single(x=> x.Name == "Get" && x.IsGenericMethod)
+					.MakeGenericMethod(type)
+					.Invoke(this, new object[] { });
+			}
+
+			return fakeDbSetBase;
+		}
+
 		public IEntityStructureProvider EntityStructureProvider { get; private set; }
 
 		#endregion properties
@@ -38,6 +58,7 @@ namespace EF.Fake
 		public FakeContext(IEntityStructureProvider entityStructureProvider)
 		{
 			_fakeDbSetDictionary = new Dictionary<Type, FakeDbSetBase>();
+			_pendingSaveEntities = new List<object>();
 
 			EntityStructureProvider = entityStructureProvider;
 		}
@@ -46,17 +67,17 @@ namespace EF.Fake
 
 		#region internal methods
 
-		/// <summary>
-		/// Adds an entity to the context. The entity is added to the corresponding FakeDbSet when SaveChanges is invoked on the context.
-		/// </summary>
-		/// <param name="entity"></param>
-		internal void AddEntity(object entity)
-		{
+		///// <summary>
+		///// Adds an entity to the context. The entity is added to the corresponding FakeDbSet when SaveChanges is invoked on the context.
+		///// </summary>
+		///// <param name="entity"></param>
+		//internal void AddEntity(object entity)
+		//{
 			
-			//add the entity to a pending list
+		//	//add the entity to a pending list
 
-			throw new NotImplementedException();
-		}
+		//	throw new NotImplementedException();
+		//}
 
 		/// <summary>
 		/// Adds an entity to the context and to the corresponding FakeDbSet.
@@ -65,17 +86,24 @@ namespace EF.Fake
 		internal void AddAndAttachEntity(object entity)
 		{
 			//add the entity directly to the corresponding FakeDbSet.
-			FakeDbSetBase dbSetObj;
+			FakeDbSetBase dbSetObj = Get(entity.GetType());
 
-			if (!_fakeDbSetDictionary.TryGetValue(entity.GetType(), out dbSetObj))
-			{
-				//create the fake db set
-				dbSetObj = (FakeDbSetBase)typeof(FakeContext)
-					.GetMethod("Get")
-					.MakeGenericMethod(entity.GetType())
-					.Invoke(this, new object[] { });
-			}
+			//if (!_fakeDbSetDictionary.TryGetValue(entity.GetType(), out dbSetObj))
+			//{
+			//	//create the fake db set
+			//	dbSetObj = (FakeDbSetBase)typeof(FakeContext)
+			//		.GetMethod("Get")
+			//		.MakeGenericMethod(entity.GetType())
+			//		.Invoke(this, new object[] { });
+			//}
 			dbSetObj.AddTestData(entity);
+		}
+
+		internal void AddPendingData(object data)
+		{
+			//TODO: do some verifications first
+			//like if it's a proxy object, or if it's already in our pending list
+			_pendingSaveEntities.Add(data);
 		}
 
 		#endregion internal methods
@@ -84,17 +112,25 @@ namespace EF.Fake
 
 		public void SaveChanges()
 		{
-			throw new NotImplementedException();
+			foreach (object data in _pendingSaveEntities)
+			{
+				AddAndAttachEntity(data);
+			}
+
+			_pendingSaveEntities.Clear();
 		}
 
 		public void AddTestData(object data)
 		{
-			throw new NotImplementedException();
+			AddAndAttachEntity(data);
 		}
 
-		public void AddTestData<T>(ICollection<T> data)
+		public void AddTestData<T>(ICollection<T> dataCollection)
 		{
-			throw new NotImplementedException();
+			foreach (object data in dataCollection)
+			{
+				AddTestData(data);
+			}
 		}
 
 		#endregion public methods
