@@ -8,7 +8,7 @@ namespace EF.Fake
 {
 	public interface IEntityStructureProvider
 	{
-		List<NavigationPropertyInfo> NavigationProperties;
-		List<EntityKeysInfo> EntityKeys;
+		List<NavigationPropertyInfo> NavigationProperties { get; }
+		List<EntityKeysInfo> EntityKeys { get; }
 	}
 }
