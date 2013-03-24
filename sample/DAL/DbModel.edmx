@@ -1,0 +1,151 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<edmx:Edmx Version="3.0" xmlns:edmx="http://schemas.microsoft.com/ado/2009/11/edmx">
+  <!-- EF Runtime content -->
+  <edmx:Runtime>
+    <!-- SSDL content -->
+    <edmx:StorageModels>
+      <Schema xmlns="http://schemas.microsoft.com/ado/2009/11/edm/ssdl" Namespace="DbModel.Store" Alias="Self" Provider="System.Data.SqlClient" ProviderManifestToken="2005">
+        <EntityContainer Name="DbModelTargetContainer" >
+        </EntityContainer>
+      </Schema>
+    </edmx:StorageModels>
+    <!-- CSDL content -->
+    <edmx:ConceptualModels>
+      <Schema xmlns="http://schemas.microsoft.com/ado/2009/11/edm" xmlns:cg="http://schemas.microsoft.com/ado/2006/04/codegeneration" xmlns:store="http://schemas.microsoft.com/ado/2007/12/edm/EntityStoreSchemaGenerator" Namespace="DbModel" Alias="Self" xmlns:annotation="http://schemas.microsoft.com/ado/2009/02/edm/annotation" annotation:UseStrongSpatialTypes="false">
+        <EntityContainer Name="DbModelContainer" annotation:LazyLoadingEnabled="true">
+          <EntitySet Name="Customers" EntityType="DbModel.Customer" />
+          <EntitySet Name="Products" EntityType="DbModel.Product" />
+          <AssociationSet Name="ProductCustomer" Association="DbModel.ProductCustomer">
+            <End Role="Product" EntitySet="Products" />
+            <End Role="Customer" EntitySet="Customers" />
+          </AssociationSet>
+          <EntitySet Name="Depots" EntityType="DbModel.Depot" />
+          <AssociationSet Name="CustomerDepot" Association="DbModel.CustomerDepot">
+            <End Role="Customer" EntitySet="Customers" />
+            <End Role="Depot" EntitySet="Depots" />
+          </AssociationSet>
+          <AssociationSet Name="ProductDepot" Association="DbModel.ProductDepot">
+            <End Role="Product" EntitySet="Products" />
+            <End Role="Depot" EntitySet="Depots" />
+          </AssociationSet>
+          <EntitySet Name="Locations" EntityType="DbModel.Location" />
+          <AssociationSet Name="DepotLocation" Association="DbModel.DepotLocation">
+            <End Role="Depot" EntitySet="Depots" />
+            <End Role="Location" EntitySet="Locations" />
+          </AssociationSet>
+        </EntityContainer>
+        <EntityType Name="Customer">
+          <Key>
+            <PropertyRef Name="CustomerId" />
+          </Key>
+          <Property Type="Int32" Name="CustomerId" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <NavigationProperty Name="Products" Relationship="DbModel.ProductCustomer" FromRole="Customer" ToRole="Product" />
+          <NavigationProperty Name="Depot" Relationship="DbModel.CustomerDepot" FromRole="Customer" ToRole="Depot" />
+          <Property Type="Int32" Name="DepotId" Nullable="false" />
+        </EntityType>
+        <EntityType Name="Product">
+          <Key>
+            <PropertyRef Name="ProductId" />
+          </Key>
+          <Property Type="Int32" Name="ProductId" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <NavigationProperty Name="Customer" Relationship="DbModel.ProductCustomer" FromRole="Product" ToRole="Customer" />
+          <Property Type="Int32" Name="CustomerId" Nullable="false" />
+          <NavigationProperty Name="Depot" Relationship="DbModel.ProductDepot" FromRole="Product" ToRole="Depot" />
+          <Property Type="Int32" Name="DepotId" Nullable="false" />
+        </EntityType>
+        <Association Name="ProductCustomer">
+          <End Type="DbModel.Product" Role="Product" Multiplicity="*" />
+          <End Type="DbModel.Customer" Role="Customer" Multiplicity="1" />
+          <ReferentialConstraint>
+            <Principal Role="Customer">
+              <PropertyRef Name="CustomerId" />
+            </Principal>
+            <Dependent Role="Product">
+              <PropertyRef Name="CustomerId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="Depot">
+          <Key>
+            <PropertyRef Name="DepotId" />
+          </Key>
+          <Property Type="Int32" Name="DepotId" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <NavigationProperty Name="Customers" Relationship="DbModel.CustomerDepot" FromRole="Depot" ToRole="Customer" />
+          <NavigationProperty Name="Products" Relationship="DbModel.ProductDepot" FromRole="Depot" ToRole="Product" />
+          <NavigationProperty Name="Location" Relationship="DbModel.DepotLocation" FromRole="Depot" ToRole="Location" />
+          <Property Type="Int32" Name="LocationLocationId" Nullable="false" />
+        </EntityType>
+        <Association Name="CustomerDepot">
+          <End Type="DbModel.Customer" Role="Customer" Multiplicity="*" />
+          <End Type="DbModel.Depot" Role="Depot" Multiplicity="1" />
+          <ReferentialConstraint>
+            <Principal Role="Depot">
+              <PropertyRef Name="DepotId" />
+            </Principal>
+            <Dependent Role="Customer">
+              <PropertyRef Name="DepotId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <Association Name="ProductDepot">
+          <End Type="DbModel.Product" Role="Product" Multiplicity="*" />
+          <End Type="DbModel.Depot" Role="Depot" Multiplicity="1" />
+          <ReferentialConstraint>
+            <Principal Role="Depot">
+              <PropertyRef Name="DepotId" />
+            </Principal>
+            <Dependent Role="Product">
+              <PropertyRef Name="DepotId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+        <EntityType Name="Location">
+          <Key>
+            <PropertyRef Name="LocationId" />
+          </Key>
+          <Property Type="Int32" Name="LocationId" Nullable="false" annotation:StoreGeneratedPattern="Identity" />
+          <NavigationProperty Name="Depots" Relationship="DbModel.DepotLocation" FromRole="Location" ToRole="Depot" />
+        </EntityType>
+        <Association Name="DepotLocation">
+          <End Type="DbModel.Depot" Role="Depot" Multiplicity="*" />
+          <End Type="DbModel.Location" Role="Location" Multiplicity="1" />
+          <ReferentialConstraint>
+            <Principal Role="Location">
+              <PropertyRef Name="LocationId" />
+            </Principal>
+            <Dependent Role="Depot">
+              <PropertyRef Name="LocationLocationId" />
+            </Dependent>
+          </ReferentialConstraint>
+        </Association>
+      </Schema>
+    </edmx:ConceptualModels>
+    <!-- C-S mapping content -->
+    <edmx:Mappings>
+      <Mapping xmlns="http://schemas.microsoft.com/ado/2009/11/mapping/cs" Space="C-S">
+        <Alias Key="Model" Value="DbModel" />
+        <Alias Key="Target" Value="DbModel.Store" />
+        <EntityContainerMapping CdmEntityContainer="DbModelContainer" StorageEntityContainer="DbModelTargetContainer">
+        </EntityContainerMapping>
+      </Mapping>
+    </edmx:Mappings>
+  </edmx:Runtime>
+  <!-- EF Designer content (DO NOT EDIT MANUALLY BELOW HERE) -->
+  <edmx:Designer xmlns="http://schemas.microsoft.com/ado/2009/11/edmx">
+    <edmx:Connection>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="MetadataArtifactProcessing" Value="EmbedInOutputAssembly" />
+      </DesignerInfoPropertySet>
+    </edmx:Connection>
+    <edmx:Options>
+      <DesignerInfoPropertySet>
+        <DesignerProperty Name="ValidateOnBuild" Value="true" />
+        <DesignerProperty Name="EnablePluralization" Value="True" />
+        <DesignerProperty Name="CodeGenerationStrategy" Value="None" />
+      </DesignerInfoPropertySet>
+    </edmx:Options>
+    <!-- Diagram content (shape and connector positions) -->
+    <edmx:Diagrams>
+    </edmx:Diagrams>
+  </edmx:Designer>
+</edmx:Edmx>
